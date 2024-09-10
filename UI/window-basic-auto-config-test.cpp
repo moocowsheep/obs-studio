@@ -8,10 +8,10 @@
 #include <graphics/vec4.h>
 #include <graphics/graphics.h>
 #include <graphics/math-extra.h>
+#include <qt-wrappers.hpp>
 
 #include "window-basic-auto-config.hpp"
 #include "window-basic-main.hpp"
-#include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 
 #include "ui_AutoConfigTestPage.h"
@@ -221,16 +221,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 	OBSDataAutoRelease output_settings = obs_data_create();
 
 	std::string key = wiz->key;
-	if (wiz->service == AutoConfig::Service::Twitch) {
+	if (wiz->service == AutoConfig::Service::Twitch ||
+	    wiz->service == AutoConfig::Service::AmazonIVS) {
 		string_depad_key(key);
 		key += "?bandwidthtest";
 	} else if (wiz->serviceName == "Restream.io" ||
 		   wiz->serviceName == "Restream.io - RTMP") {
 		string_depad_key(key);
 		key += "?test=true";
-	} else if (wiz->serviceName == "Restream.io - FTL") {
-		string_depad_key(key);
-		key += "?test";
 	}
 
 	obs_data_set_string(service_settings, "service",
@@ -269,8 +267,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	    wiz->serviceName == "Nimo TV") {
 		servers.resize(1);
 
-	} else if (wiz->service == AutoConfig::Service::Twitch &&
-		   wiz->twitchAuto) {
+	} else if ((wiz->service == AutoConfig::Service::Twitch &&
+		    wiz->twitchAuto) ||
+		   (wiz->service == AutoConfig::Service::AmazonIVS &&
+		    wiz->amazonIVSAuto)) {
 		/* if using Twitch and "Auto" is available, test 3 closest
 		 * server */
 		servers.erase(servers.begin() + 1);

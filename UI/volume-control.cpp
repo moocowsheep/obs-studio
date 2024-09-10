@@ -1,10 +1,12 @@
 #include "window-basic-main.hpp"
-#include "volume-control.hpp"
-#include "qt-wrappers.hpp"
+#include "moc_volume-control.cpp"
 #include "obs-app.hpp"
 #include "mute-checkbox.hpp"
 #include "absolute-slider.hpp"
 #include "source-label.hpp"
+
+#include <slider-ignorewheel.hpp>
+#include <qt-wrappers.hpp>
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -13,7 +15,6 @@
 
 using namespace std;
 
-#define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #define FADER_PRECISION 4096.0
 
 // Size of the audio indicator in pixels
@@ -1002,8 +1003,9 @@ VolumeMeter::calculateBallisticsForChannel(int channelNr, uint64_t ts,
 		// 20 dB / 1.7 seconds for Medium Profile (Type I PPM)
 		// 24 dB / 2.8 seconds for Slow Profile (Type II PPM)
 		float decay = float(peakDecayRate * timeSinceLastRedraw);
-		displayPeak[channelNr] = CLAMP(displayPeak[channelNr] - decay,
-					       currentPeak[channelNr], 0);
+		displayPeak[channelNr] =
+			std::clamp(displayPeak[channelNr] - decay,
+				   currentPeak[channelNr], 0.f);
 	}
 
 	if (currentPeak[channelNr] >= displayPeakHold[channelNr] ||
@@ -1058,8 +1060,8 @@ VolumeMeter::calculateBallisticsForChannel(int channelNr, uint64_t ts,
 			      (timeSinceLastRedraw / magnitudeIntegrationTime) *
 			      0.99);
 		displayMagnitude[channelNr] =
-			CLAMP(displayMagnitude[channelNr] + attack,
-			      (float)minimumLevel, 0);
+			std::clamp(displayMagnitude[channelNr] + attack,
+				   (float)minimumLevel, 0.f);
 	}
 }
 
@@ -1555,8 +1557,7 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 	}
 
 	QPainter painter(this);
-	QColor *tickColor = new QColor;
-	tickColor->setRgb(91, 98, 115, 255);
+	QColor tickColor(91, 98, 115, 255);
 
 	obs_fader_conversion_t fader_db_to_def = obs_fader_db_to_def(fad);
 
@@ -1582,7 +1583,7 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 
 			float xPos = groove.left() + (tickValue * sliderWidth) +
 				     (handle.width() / 2);
-			painter.fillRect(xPos, yPos, 1, tickLength, *tickColor);
+			painter.fillRect(xPos, yPos, 1, tickLength, tickColor);
 		}
 	}
 
@@ -1601,7 +1602,7 @@ void VolumeSlider::paintEvent(QPaintEvent *event)
 			float yPos = groove.height() + groove.top() -
 				     (tickValue * sliderHeight) -
 				     (handle.height() / 2);
-			painter.fillRect(xPos, yPos, tickLength, 1, *tickColor);
+			painter.fillRect(xPos, yPos, tickLength, 1, tickColor);
 		}
 	}
 
